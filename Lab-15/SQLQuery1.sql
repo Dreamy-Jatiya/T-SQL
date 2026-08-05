@@ -129,7 +129,7 @@ VALUES ('E01','TARUN',NULL),
 	('E04','MILAN','E03'),
 	('E05','JAY','E01'),
 	('E06','ANJANA','E04')
-
+	
 SELECT * FROM EMPLOYEE_MASTER
 
 --16. Retrieve the names of employee along with their manager’s name from the Employee table.
