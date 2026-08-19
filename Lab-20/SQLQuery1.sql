@@ -1,0 +1,192 @@
+--From the table STUDENT perform the following queries:  
+--Part – A: 
+SELECT *FROM STUDENT
+
+--1. Display rank of students based on SPI. 
+SELECT SNAME,SPI,
+	RANK()OVER (ORDER BY SPI DESC) AS R_RANK
+FROM STUDENT;
+
+--2. Display dense rank of students based on SPI.
+SELECT SNAME,SPI,
+	DENSE_RANK()OVER (ORDER BY SPI DESC) AS D_RANK
+FROM STUDENT;
+
+--3. Display sequential number for each student record. 
+SELECT SNAME,SPI,
+	ROW_NUMBER()OVER (ORDER BY SPI DESC) AS SEQ_NO
+FROM STUDENT;
+
+--4. Display branch-wise rank of students. 
+SELECT SNAME,SPI,BRANCH,
+RANK()OVER 
+(
+	PARTITION BY BRANCH
+	ORDER BY SPI DESC
+) AS R_RANK
+FROM STUDENT;
+
+--5. Display branch-wise dense ranking of students.
+SELECT SNAME,SPI,BRANCH,
+DENSE_RANK()OVER 
+(
+	PARTITION BY BRANCH
+	ORDER BY SPI DESC
+) AS D_RANK
+FROM STUDENT;
+
+--6. Display branch-wise sequential numbering of students. 
+SELECT SNAME,SPI,BRANCH,
+ROW_NUMBER()OVER 
+(
+	PARTITION BY BRANCH
+	ORDER BY SPI DESC
+) AS SEQ_NO
+FROM STUDENT;
+
+--7. Display SNAME, Current SPI, Previous SPI and SPI Difference with previous student in ascending order of 
+--SPI. 
+SELECT SNAME,SPI,PREVIOUS_SPI,SPI-PREVIOUS_SPI AS SPI_DIFFERENCE
+FROM
+(	SELECT SNAME,SPI,
+	LAG(SPI,1) OVER(ORDER BY SPI) AS PREVIOUS_SPI
+	FROM STUDENT
+)AS T
+ORDER BY SPI ASC;
+
+--8. Display SNAME, Current SPI, Next SPI and SPI Difference with next student in descending order of SPI.  
+SELECT SNAME,SPI,NEXT_SPI,SPI - NEXT_SPI AS SPI_DIFFERENCE
+FROM
+(	SELECT SNAME,SPI,
+    LEAD(SPI,1) OVER (ORDER BY SPI DESC) AS NEXT_SPI
+    FROM STUDENT
+)AS T
+ORDER BY SPI DESC;
+
+--9. Display top 3 students based on SPI. 
+SELECT SNAME,SPI,D_RANK
+FROM
+(	SELECT SNAME,SPI,BRANCH,
+	DENSE_RANK()OVER (ORDER BY SPI DESC) AS D_RANK
+	FROM STUDENT
+)AS T
+WHERE D_RANK<=3
+
+--10. Display top 2 students from each branch. 
+SELECT SNAME,SPI,D_RANK
+FROM
+(	SELECT SNAME,SPI,BRANCH,
+	DENSE_RANK()OVER 
+	(
+		PARTITION BY BRANCH
+		ORDER BY SPI DESC
+	) AS D_RANK
+	FROM STUDENT
+)AS T
+WHERE D_RANK<=2
+
+--Part – B: 
+--11. Display 5th highest SPI. 
+SELECT SNAME,SPI,D_RANK
+FROM
+(	SELECT SNAME,SPI,BRANCH,
+	DENSE_RANK()OVER (ORDER BY SPI DESC) AS D_RANK
+	FROM STUDENT
+)AS T
+WHERE D_RANK=5
+
+--12. Display 6th highest SPI. 
+SELECT SNAME,SPI,D_RANK
+FROM
+(	SELECT SNAME,SPI,BRANCH,
+	DENSE_RANK()OVER (ORDER BY SPI DESC) AS D_RANK
+	FROM STUDENT
+)AS T
+WHERE D_RANK=6
+
+--13. Display students having same ranking. 
+SELECT * FROM(
+	SELECT SNAME,SPI,BRANCH,
+	DENSE_RANK()OVER (ORDER BY SPI DESC) AS D_RANK,
+	COUNT(*) OVER(PARTITION BY SPI) AS COUNT_SPI
+	FROM STUDENT
+)AS T
+WHERE COUNT_SPI>1
+
+--14. Display SNAME, Previous SPI, Current SPI and Next SPI based on ascending order of SPI. 
+SELECT SNAME,
+       LAG(SPI,1) OVER(ORDER BY SPI) AS PREVIOUS_SPI,
+       SPI AS CURRENT_SPI,
+       LEAD(SPI,1) OVER(ORDER BY SPI) AS NEXT_SPI
+FROM STUDENT;
+
+--15. Display topper of each branch. 
+SELECT SNAME,BRANCH,SPI,D_RANK
+FROM
+(
+	SELECT SNAME,SPI,BRANCH,
+	DENSE_RANK()OVER 
+	(
+		PARTITION BY BRANCH
+		ORDER BY SPI DESC
+	) AS D_RANK
+	FROM STUDENT
+) AS T
+WHERE D_RANK=1
+
+--Part – C: 
+--16. Display students whose SPI is greater than the previous student and less than the next student. 
+SELECT *
+FROM(
+	SELECT SNAME,SPI,
+	LAG(SPI) OVER(ORDER BY SPI) AS PREVIOUS_SPI,
+	LEAD(SPI) OVER(ORDER BY SPI) AS NEXT_SPI
+	FROM STUDENT
+)AS T
+WHERE SPI>PREVIOUS_SPI AND SPI<NEXT_SPI
+
+--17. Display branch-wise second topper students. 
+SELECT SNAME,SPI,D_RANK,BRANCH
+FROM(
+	SELECT SNAME,SPI,BRANCH,
+	DENSE_RANK() OVER(
+		PARTITION BY BRANCH
+		ORDER BY SPI DESC) AS D_RANK
+	FROM STUDENT
+)AS T
+WHERE D_RANK=2
+
+--18. Display students whose rank and dense rank are different. 
+SELECT SNAME,SPI,D_RANK,R_RANK
+FROM(
+	SELECT SNAME,SPI,BRANCH,
+		DENSE_RANK() OVER(ORDER BY SPI DESC) AS D_RANK,
+		RANK() OVER(ORDER BY SPI DESC) AS R_RANK
+	FROM STUDENT
+)AS T
+WHERE D_RANK!=R_RANK
+
+--19. Display consecutive students having same branch ordered by SPI. 
+SELECT *
+FROM (
+SELECT s.*,
+        LAG(Branch) OVER (ORDER BY SPI) AS Prev_Branch
+FROM Student s
+)AS T
+WHERE Branch = Prev_Branch
+ORDER BY SPI;
+
+--20. Display students whose SPI difference with previous student is maximum.
+SELECT *
+FROM (
+SELECT s.*,
+        SPI - LAG(SPI) OVER (ORDER BY SPI) AS SPI_Difference
+		FROM Student s
+)AS X
+WHERE SPI_Difference = (
+SELECT MAX(SPI_Difference)
+FROM (
+    SELECT SPI - LAG(SPI) OVER (ORDER BY SPI) AS SPI_Difference
+    FROM Student
+	)AS Y
+);
